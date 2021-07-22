@@ -1,13 +1,12 @@
 use crate::repository::{Message, MessagePart};
 use chrono::Utc;
-use mailparse::{parse_mail, DispositionType, MailHeaderMap, ParsedMail};
-use std::error::Error;
+use mailparse::{parse_mail, DispositionType, MailHeaderMap, MailParseError, ParsedMail};
 
 pub fn parse_message(
     sender: &Option<String>,
     recipients: &[String],
     raw_email: &[u8],
-) -> Result<Message, Box<dyn Error>> {
+) -> Result<Message, MailParseError> {
     let parsed_email = parse_mail(raw_email)?;
 
     let sender = sender.clone();

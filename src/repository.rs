@@ -40,50 +40,40 @@ pub struct MessagePart {
     pub is_attachment: bool,
 }
 
-pub trait MessageRepository {
-    fn persist(&mut self, message: Message);
-    fn find_all(&self) -> Vec<&Message>;
-    fn find(&self, id: usize) -> Option<&Message>;
-    fn delete_all(&mut self);
-    fn delete(&mut self, id: usize) -> Option<Message>;
-}
-
-pub struct InMemoryRepository {
+pub struct MessageRepository {
     last_insert_id: usize,
     messages: HashMap<usize, Message>,
 }
 
-impl InMemoryRepository {
+impl MessageRepository {
     pub fn new() -> Self {
-        InMemoryRepository {
+        MessageRepository {
             last_insert_id: 0,
             messages: HashMap::new(),
         }
     }
-}
 
-impl MessageRepository for InMemoryRepository {
-    fn persist(&mut self, mut message: Message) {
+    pub fn persist(&mut self, mut message: Message) {
         let id = self.last_insert_id + 1;
         self.last_insert_id += 1;
         message.id = Some(id);
         self.messages.insert(id, message);
     }
 
-    fn find_all(&self) -> Vec<&Message> {
+    pub fn find_all(&self) -> Vec<&Message> {
         self.messages.values().collect()
     }
 
-    fn find(&self, id: usize) -> Option<&Message> {
+    pub fn find(&self, id: usize) -> Option<&Message> {
         self.messages.get(&id)
     }
 
-    fn delete_all(&mut self) {
+    pub fn delete_all(&mut self) {
         self.messages.clear();
         self.last_insert_id = 0;
     }
 
-    fn delete(&mut self, id: usize) -> Option<Message> {
+    pub fn delete(&mut self, id: usize) -> Option<Message> {
         self.messages.remove(&id)
     }
 }

@@ -2,14 +2,11 @@ use lettre::{AsyncSmtpTransport, AsyncTransport, Message as EmailMessage, Tokio1
 use std::net::{SocketAddr, TcpListener};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
-use tiny_mailcatcher::repository::{InMemoryRepository, MessageRepository};
+use tiny_mailcatcher::repository::MessageRepository;
 use tiny_mailcatcher::smtp::run_smtp_server;
 use tokio::task::JoinHandle;
 
-fn launch_test_smtp_server(
-    repository: Arc<Mutex<InMemoryRepository>>,
-    port: u16,
-) -> JoinHandle<()> {
+fn launch_test_smtp_server(repository: Arc<Mutex<MessageRepository>>, port: u16) -> JoinHandle<()> {
     let addr = SocketAddr::from_str(format!("127.0.0.1:{}", port).as_str()).unwrap();
     let tcp_listener = TcpListener::bind(addr).unwrap();
 
@@ -20,7 +17,7 @@ fn launch_test_smtp_server(
     })
 }
 
-async fn send_mail(repository: Arc<Mutex<InMemoryRepository>>, sender: &str, recipient: &str) {
+async fn send_mail(repository: Arc<Mutex<MessageRepository>>, sender: &str, recipient: &str) {
     let port = 62044;
     let server = launch_test_smtp_server(repository, port);
 
@@ -42,7 +39,7 @@ async fn send_mail(repository: Arc<Mutex<InMemoryRepository>>, sender: &str, rec
 
 #[tokio::test]
 async fn test_smtp_server_is_reachable() {
-    let repository = Arc::new(Mutex::new(InMemoryRepository::new()));
+    let repository = Arc::new(Mutex::new(MessageRepository::new()));
 
     send_mail(
         repository.clone(),

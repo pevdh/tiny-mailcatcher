@@ -10,13 +10,10 @@ use std::net::TcpListener;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
-pub async fn run_http_server<R>(
+pub async fn run_http_server(
     tcp_listener: TcpListener,
-    repository: Arc<Mutex<R>>,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
-where
-    R: 'static + MessageRepository + Send,
-{
+    repository: Arc<Mutex<MessageRepository>>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info!(
         "Starting HTTP server on {}",
         tcp_listener.local_addr().unwrap()
@@ -41,10 +38,10 @@ where
     Ok(())
 }
 
-pub fn handle_request<R>(repository: Arc<Mutex<R>>, req: Request<Body>) -> Response<Body>
-where
-    R: MessageRepository,
-{
+pub fn handle_request(
+    repository: Arc<Mutex<MessageRepository>>,
+    req: Request<Body>,
+) -> Response<Body> {
     info!("{} {}", req.method().as_str(), req.uri().path());
 
     let get_message_regex = Regex::new(r"^/messages/(\d+)(\.[a-z]+)?$").unwrap();
@@ -112,10 +109,7 @@ struct GetMessagesListItem {
     created_at: String,
 }
 
-fn get_messages<R>(repository: Arc<Mutex<R>>) -> Response<Body>
-where
-    R: MessageRepository,
-{
+fn get_messages(repository: Arc<Mutex<MessageRepository>>) -> Response<Body> {
     let mut messages = vec![];
     for message in repository.lock().unwrap().find_all() {
         messages.push(GetMessagesListItem {
@@ -131,10 +125,7 @@ where
     Response::new(serde_json::to_string(&messages).unwrap().into())
 }
 
-fn delete_messages<R>(repository: Arc<Mutex<R>>) -> Response<Body>
-where
-    R: MessageRepository,
-{
+fn delete_messages(repository: Arc<Mutex<MessageRepository>>) -> Response<Body> {
     repository.lock().unwrap().delete_all();
 
     Response::builder()
@@ -168,10 +159,7 @@ struct GetMessageAttachment {
     pub href: String,
 }
 
-fn get_message_json<R>(repository: Arc<Mutex<R>>, id: usize) -> Response<Body>
-where
-    R: MessageRepository,
-{
+fn get_message_json(repository: Arc<Mutex<MessageRepository>>, id: usize) -> Response<Body> {
     let message = repository.lock().unwrap().find(id).map(|message| {
         let mut formats = vec!["source".to_string()];
         if message.html().is_some() {
@@ -216,10 +204,7 @@ where
     }
 }
 
-fn get_message_html<R>(repository: Arc<Mutex<R>>, id: usize) -> Response<Body>
-where
-    R: MessageRepository,
-{
+fn get_message_html(repository: Arc<Mutex<MessageRepository>>, id: usize) -> Response<Body> {
     let repository = repository.lock().unwrap();
     let html_part = repository.find(id).and_then(|message| message.html());
 
@@ -239,10 +224,7 @@ where
     };
 }
 
-fn get_message_plain<R>(repository: Arc<Mutex<R>>, id: usize) -> Response<Body>
-where
-    R: MessageRepository,
-{
+fn get_message_plain(repository: Arc<Mutex<MessageRepository>>, id: usize) -> Response<Body> {
     let repository = repository.lock().unwrap();
     let html_part = repository.find(id).and_then(|message| message.plain());
 
@@ -262,10 +244,7 @@ where
     };
 }
 
-fn get_message_source<R>(repository: Arc<Mutex<R>>, id: usize) -> Response<Body>
-where
-    R: MessageRepository,
-{
+fn get_message_source(repository: Arc<Mutex<MessageRepository>>, id: usize) -> Response<Body> {
     let repository = repository.lock().unwrap();
     let message = repository.find(id);
 
@@ -285,10 +264,7 @@ where
     };
 }
 
-fn get_message_eml<R>(repository: Arc<Mutex<R>>, id: usize) -> Response<Body>
-where
-    R: MessageRepository,
-{
+fn get_message_eml(repository: Arc<Mutex<MessageRepository>>, id: usize) -> Response<Body> {
     let repository = repository.lock().unwrap();
     let message = repository.find(id);
 
@@ -308,10 +284,11 @@ where
     };
 }
 
-fn get_message_part<R>(repository: Arc<Mutex<R>>, id: usize, cid: &str) -> Response<Body>
-where
-    R: MessageRepository,
-{
+fn get_message_part(
+    repository: Arc<Mutex<MessageRepository>>,
+    id: usize,
+    cid: &str,
+) -> Response<Body> {
     let repository = repository.lock().unwrap();
     let part = repository
         .find(id)
@@ -345,10 +322,7 @@ where
     };
 }
 
-fn delete_message<R>(repository: Arc<Mutex<R>>, id: usize) -> Response<Body>
-where
-    R: MessageRepository,
-{
+fn delete_message(repository: Arc<Mutex<MessageRepository>>, id: usize) -> Response<Body> {
     let deleted_message = repository.lock().unwrap().delete(id);
 
     if deleted_message.is_some() {
@@ -367,7 +341,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::repository::{InMemoryRepository, Message, MessagePart};
+    use crate::repository::{Message, MessagePart, MessageRepository};
     use chrono::{TimeZone, Utc};
     use hyper::{body, Body, Request, StatusCode};
     use std::sync::{Arc, Mutex};
@@ -397,7 +371,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_messages_returns_messages_in_repository() {
-        let repository = Arc::new(Mutex::new(InMemoryRepository::new()));
+        let repository = Arc::new(Mutex::new(MessageRepository::new()));
         repository.lock().unwrap().persist(create_test_message());
 
         let req = Request::get("/messages").body(Body::empty()).unwrap();
@@ -420,7 +394,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_messages_clears_repository() {
-        let repository = Arc::new(Mutex::new(InMemoryRepository::new()));
+        let repository = Arc::new(Mutex::new(MessageRepository::new()));
         repository.lock().unwrap().persist(create_test_message());
 
         let req = Request::delete("/messages").body(Body::empty()).unwrap();
@@ -433,7 +407,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_message_json() {
-        let repository = Arc::new(Mutex::new(InMemoryRepository::new()));
+        let repository = Arc::new(Mutex::new(MessageRepository::new()));
         repository.lock().unwrap().persist(create_test_message());
 
         let req = Request::get("/messages/1.json")
@@ -459,7 +433,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_message_html() {
-        let repository = Arc::new(Mutex::new(InMemoryRepository::new()));
+        let repository = Arc::new(Mutex::new(MessageRepository::new()));
         repository.lock().unwrap().persist(Message {
             id: Some(1),
             size: 42,
@@ -495,7 +469,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_message_plain() {
-        let repository = Arc::new(Mutex::new(InMemoryRepository::new()));
+        let repository = Arc::new(Mutex::new(MessageRepository::new()));
         repository.lock().unwrap().persist(Message {
             id: Some(1),
             size: 42,
@@ -531,7 +505,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_message_source() {
-        let repository = Arc::new(Mutex::new(InMemoryRepository::new()));
+        let repository = Arc::new(Mutex::new(MessageRepository::new()));
         repository.lock().unwrap().persist(Message {
             id: Some(1),
             size: 42,
@@ -567,7 +541,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_message_eml() {
-        let repository = Arc::new(Mutex::new(InMemoryRepository::new()));
+        let repository = Arc::new(Mutex::new(MessageRepository::new()));
         repository.lock().unwrap().persist(Message {
             id: Some(1),
             size: 42,
@@ -605,7 +579,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_message_part() {
-        let repository = Arc::new(Mutex::new(InMemoryRepository::new()));
+        let repository = Arc::new(Mutex::new(MessageRepository::new()));
         repository.lock().unwrap().persist(Message {
             id: Some(1),
             size: 42,
@@ -653,7 +627,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_message() {
-        let repository = Arc::new(Mutex::new(InMemoryRepository::new()));
+        let repository = Arc::new(Mutex::new(MessageRepository::new()));
         repository.lock().unwrap().persist(Message {
             id: Some(1),
             size: 42,

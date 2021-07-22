@@ -1157,6 +1157,7 @@ dependencies = [
  "lettre",
  "log",
  "mailparse",
+ "memchr",
  "regex",
  "reqwest",
  "serde",

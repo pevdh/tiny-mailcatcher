@@ -4,11 +4,11 @@ use std::net::{SocketAddr, TcpListener};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use tiny_mailcatcher::http::run_http_server;
-use tiny_mailcatcher::repository::{InMemoryRepository, Message, MessageRepository};
+use tiny_mailcatcher::repository::{Message, MessageRepository};
 use tokio::task::JoinHandle;
 
-fn create_repository_with_messages(messages: Vec<Message>) -> Arc<Mutex<InMemoryRepository>> {
-    let mut repository = InMemoryRepository::new();
+fn create_repository_with_messages(messages: Vec<Message>) -> Arc<Mutex<MessageRepository>> {
+    let mut repository = MessageRepository::new();
 
     for message in messages {
         repository.persist(message);
@@ -17,10 +17,7 @@ fn create_repository_with_messages(messages: Vec<Message>) -> Arc<Mutex<InMemory
     Arc::new(Mutex::new(repository))
 }
 
-fn launch_test_http_server(
-    repository: Arc<Mutex<InMemoryRepository>>,
-    port: u16,
-) -> JoinHandle<()> {
+fn launch_test_http_server(repository: Arc<Mutex<MessageRepository>>, port: u16) -> JoinHandle<()> {
     let addr = SocketAddr::from_str(format!("127.0.0.1:{}", port).as_str()).unwrap();
     let tcp_listener = TcpListener::bind(addr).unwrap();
 
@@ -32,7 +29,7 @@ fn launch_test_http_server(
 }
 
 async fn do_request(
-    repository: Arc<Mutex<InMemoryRepository>>,
+    repository: Arc<Mutex<MessageRepository>>,
     method: Method,
     uri: &str,
 ) -> Response {
