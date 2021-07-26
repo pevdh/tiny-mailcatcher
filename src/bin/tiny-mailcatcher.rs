@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
 }
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "tiny-mailcatcher")]
+#[structopt(name = "tiny-mailcatcher", about)]
 struct Options {
     #[structopt(long, default_value = "127.0.0.1")]
     ip: String,

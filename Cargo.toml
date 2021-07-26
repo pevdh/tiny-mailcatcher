@@ -3,6 +3,12 @@ name = "tiny-mailcatcher"
 version = "0.9.0"
 authors = ["Pieter van den Ham <pevandenham@gmail.com>"]
 edition = "2018"
+license = "MIT"
+description = "A tiny MailCatcher clone"
+readme = "README.md"
+repository = "https://github.com/pevdh/tiny-mailcatcher"
+keywords = ["email", "mailcatcher", "smtp", "mta"]
+categories = ["development-tools"]
 
 [[bin]]
 name = "tiny-mailcatcher"
