@@ -1,5 +1,5 @@
 use crate::repository::MessageRepository;
-use hyper::http::HeaderValue;
+use hyper::header::{self, HeaderValue};
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use log::info;
@@ -44,6 +44,15 @@ pub fn handle_request(
 ) -> Response<Body> {
     info!("{} {}", req.method().as_str(), req.uri().path());
 
+    let response = route_request_to_endpoint(repository, req);
+
+    with_cors_headers(response)
+}
+
+fn route_request_to_endpoint(
+    repository: Arc<Mutex<MessageRepository>>,
+    req: Request<Body>,
+) -> Response<Body> {
     let get_message_regex = Regex::new(r"^/messages/(\d+)(\.[a-z]+)?$").unwrap();
     let caps = get_message_regex.captures(req.uri().path());
     if let Some(caps) = caps {
@@ -97,6 +106,29 @@ pub fn handle_request(
             .body(Body::empty())
             .unwrap(),
     };
+}
+
+fn with_cors_headers(mut response: Response<Body>) -> Response<Body> {
+    let headers = response.headers_mut();
+
+    headers.insert(
+        header::ACCESS_CONTROL_ALLOW_ORIGIN,
+        HeaderValue::from_static("*"),
+    );
+    headers.insert(
+        header::ACCESS_CONTROL_ALLOW_METHODS,
+        HeaderValue::from_static("*"),
+    );
+    headers.insert(
+        header::ACCESS_CONTROL_ALLOW_HEADERS,
+        HeaderValue::from_static("*"),
+    );
+    headers.insert(
+        header::ACCESS_CONTROL_EXPOSE_HEADERS,
+        HeaderValue::from_static("*"),
+    );
+
+    response
 }
 
 #[derive(Serialize)]
@@ -646,5 +678,16 @@ mod tests {
 
         assert_eq!(StatusCode::NO_CONTENT, res.status());
         assert_eq!(None, repository.lock().unwrap().find(1));
+    }
+
+    #[tokio::test]
+    async fn test_handle_request_returns_cors_headers() {
+        let repository = Arc::new(Mutex::new(MessageRepository::new()));
+
+        let req = Request::get("/messages").body(Body::empty()).unwrap();
+        let res = handle_request(repository, req);
+
+        let allow_access_header = res.headers().get(header::ACCESS_CONTROL_ALLOW_ORIGIN);
+        assert_eq!(Some(&HeaderValue::from_static("*")), allow_access_header);
     }
 }

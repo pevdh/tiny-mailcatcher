@@ -1,4 +1,5 @@
 use chrono::{TimeZone, Utc};
+use reqwest::header::HeaderValue;
 use reqwest::{Method, Response};
 use std::net::{SocketAddr, TcpListener};
 use std::str::FromStr;
