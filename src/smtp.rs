@@ -273,7 +273,7 @@ impl SmtpServerImplementation {
             self.sender.clone()
         };
 
-        let message = parse_message(&sender, &self.recipients, &buf);
+        let message = parse_message(&sender, &self.recipients, buf);
         if message.is_err() {
             return Err(Box::new(message.err().unwrap()));
         }
