@@ -27,10 +27,11 @@ futures = "0.3"
 regex = "1.5.4"
 mailparse = "0.13"
 memchr = "2.4.0"
+routerify = "3"
 
 [dev-dependencies]
 reqwest = { version = "0.11", features = ["json"] }
-lettre = { version = "0.10.0-rc.3", features = ["tokio1"] }
+lettre = { version = "0.10.0-rc.3", features = ["tokio1", "tokio1-native-tls"] }
 
 [profile.release]
 lto = true
