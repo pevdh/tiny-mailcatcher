@@ -22,7 +22,7 @@ In short:
 1. Tiny MailCatcher has an SMTP server which runs on port 1025 by default (configurable)
 2. There is a REST API that runs on port 1080 (configurable).
     - `GET/DELETE http://localhost:1080/messages` retrieves/deletes all messages
-    - `GET http://localhost:1080/messages/:id` retrieve a single message in JSON format
+    - `GET http://localhost:1080/messages/:id.json` retrieve a single message in JSON format
     - `GET http://localhost:1080/messages/:id.source` retrieve the message source
     - `GET http://localhost:1080/messages/:id.html` retrieve the HTML version of this message
     - `GET http://localhost:1080/messages/:id.eml` retrieve the EML version of this message
