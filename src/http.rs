@@ -43,12 +43,12 @@ fn router(repository: Arc<Mutex<MessageRepository>>) -> Router<Body, io::Error> 
         .middleware(Middleware::post(add_cors_headers))
         .data(state)
         .delete("/messages/:id", delete_message)
+        .get("/messages/:id.json", get_message_json)
         .get("/messages/:id.source", get_message_source)
         .get("/messages/:id.html", get_message_html)
         .get("/messages/:id.eml", get_message_eml)
         .get("/messages/:id.plain", get_message_plain)
         .get("/messages/:id/parts/:cid", get_message_part)
-        .get("/messages/:id", get_message_json)
         .get("/messages", get_messages)
         .delete("/messages", delete_messages)
         .options("/*", options_handler)
@@ -502,7 +502,7 @@ mod tests {
             .request(
                 Request::builder()
                     .method("GET")
-                    .uri(format!("http://{}/{}", serve.addr(), "messages/1"))
+                    .uri(format!("http://{}/{}", serve.addr(), "messages/1.json"))
                     .body(Body::empty())
                     .unwrap(),
             )
